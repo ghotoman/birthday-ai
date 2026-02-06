@@ -201,18 +201,32 @@ birthday-ai/
 
 ---
 
-## Последнее обновление
+## История обновлений
 
-**Дата:** 2026-02-06
-**Что сделано:** i18n (русский/английский):
+### 2026-02-06 (3) — Багфикс: краш при нажатии на контакт
+- **BirthdayCalendar.tsx**: Avatar получал числовой size (44, 40) вместо строкового ('sm'|'md'|'lg'|'xl') → краш
+- **ContactCard.tsx**: убран `stopPropagation` (не существует в React Native GestureResponderEvent)
+- **_layout.tsx**: добавлен `loadGreetings()` при старте — ранее greetingsStore никогда не инициализировался
+- **notifications.ts**: все вызовы expo-notifications обёрнуты в try-catch, fallback для `SchedulableTriggerInputTypes`, убраны неподдерживаемые свойства `shouldShowBanner`/`shouldShowList`
+- **contact/[id].tsx**: defensive coding — try-catch вокруг date-fns вызовов, nullish coalescing для label maps
+- Код запушен на GitHub, EAS build запущен
+
+### 2026-02-06 (2) — i18n (русский/английский)
 - Экран выбора языка при первом входе
 - Переключение языка в настройках (одним нажатием)
 - Все экраны переведены через i18n ключи
 - Zustand стор для языка с персистенцией в AsyncStorage
-- Предыдущее: Фаза 2 полностью завершена:
+
+### 2026-02-06 (1) — Фаза 2 завершена
 - Нативный date picker (iOS/Android) вместо текстового ввода даты
 - Редактирование контактов (экран edit/[id] + кнопка на странице контакта)
 - Push-уведомления: автоматическое планирование по NotificationLevel, Android-канал, навигация по нажатию
 - Генерация AI-открыток (DALL-E через бэкенд), сохранение в галерею, шаринг
 - Календарь-таб с сеткой по месяцам
-- Бэкенд работает по IP без домена
+
+### Ранее
+- Бэкенд (Fastify + Docker) задеплоен на сервер по IP без домена
+- GitHub интеграция + деплой через git pull
+- Шаринг в Telegram, WhatsApp, VK, OK
+- Импорт контактов из VK, OK, телефона
+- MVP: полный flow генерации, 7 AI-моделей через OpenRouter
