@@ -26,15 +26,32 @@ docker --version
 
 ### Шаг 2: Загрузить код на сервер
 
+**Вариант A — через GitHub (рекомендуется):**
+
+```bash
+# Установить git если нет
+sudo apt install git -y
+
+# Сохранить credentials чтобы не вводить каждый раз
+git config --global credential.helper store
+
+# Клонировать (нужен Personal Access Token)
+# Создай токен: https://github.com/settings/tokens → Generate new token (classic) → галка repo
+git clone https://ghotoman:ТВОЙ_ТОКЕН@github.com/ghotoman/birthday-ai.git ~/birthday-ai
+cd ~/birthday-ai/api
+```
+
+**Вариант B — через scp:**
+
 С твоего Mac:
 ```bash
-scp -r "/Users/garri/Desktop/mobile app/api" user@YOUR_SERVER_IP:~/birthdayai-api
+scp -r "/Users/garri/Desktop/mobile app/api" user@YOUR_SERVER_IP:~/birthday-ai/api
 ```
 
 ### Шаг 3: Настроить .env
 
 ```bash
-cd ~/birthdayai-api
+cd ~/birthday-ai/api
 cp .env.example .env
 nano .env
 ```
@@ -135,9 +152,12 @@ docker compose restart api
 # Остановить
 docker compose down
 
-# Обновить код
-scp -r "/Users/garri/Desktop/mobile app/api" user@IP:~/birthdayai-api
-ssh user@IP "cd ~/birthdayai-api && docker compose up -d --build"
+# Обновить код (через git — сначала закоммить и запушь с Mac)
+cd ~/birthday-ai && git pull && cd api && docker compose up -d --build
+
+# Или через scp:
+# scp -r "/Users/garri/Desktop/mobile app/api" user@IP:~/birthday-ai/api
+# ssh user@IP "cd ~/birthday-ai/api && docker compose up -d --build"
 ```
 
 ---

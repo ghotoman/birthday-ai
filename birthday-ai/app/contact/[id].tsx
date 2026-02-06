@@ -29,7 +29,8 @@ import {
   getUpcomingAge,
 } from '@/utils/dates';
 import { format, parseISO } from 'date-fns';
-import { ru } from 'date-fns/locale';
+import { ru, enUS } from 'date-fns/locale';
+import { useT, useI18n } from '@/i18n';
 
 export default function ContactDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -38,11 +39,14 @@ export default function ContactDetailScreen() {
   const contact = useContactsStore((s) => s.getContact(id!));
   const deleteContact = useContactsStore((s) => s.deleteContact);
   const pastGreetings = useGreetingsStore((s) => s.getForContact(id!));
+  const t = useT();
+  const lang = useI18n((s) => s.language);
+  const locale = lang === 'ru' ? ru : enUS;
 
   if (!contact) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <Text style={{ color: colors.textSecondary }}>Контакт не найден</Text>
+        <Text style={{ color: colors.textSecondary }}>{t.contactDetail.notFound}</Text>
       </View>
     );
   }
@@ -51,10 +55,10 @@ export default function ContactDetailScreen() {
   const isToday = days === 0;
 
   const handleDelete = () => {
-    Alert.alert('Удалить контакт?', `${contact.name} будет удалён`, [
-      { text: 'Отмена', style: 'cancel' },
+    Alert.alert(t.contactDetail.deleteTitle, `${contact.name} ${t.contactDetail.deleteMessage}`, [
+      { text: t.contactDetail.cancel, style: 'cancel' },
       {
-        text: 'Удалить',
+        text: t.contactDetail.delete,
         style: 'destructive',
         onPress: async () => {
           await deleteContact(contact.id);
@@ -109,14 +113,14 @@ export default function ContactDetailScreen() {
               ]}
             >
               {birthdayCountdownText(contact.birthday)}
-              {!isToday && ` · исполнится ${getUpcomingAge(contact.birthday)}`}
+              {!isToday && ` · ${t.contactDetail.turnsAge} ${getUpcomingAge(contact.birthday)}`}
             </Text>
           </View>
         </View>
 
         {/* CTA */}
         <Button
-          title={isToday ? 'Поздравить! 🎉' : 'Подготовить поздравление'}
+          title={isToday ? t.contactDetail.congratulateToday : t.contactDetail.prepareGreeting}
           onPress={() => router.push(`/generate/${contact.id}`)}
           variant="primary"
           size="lg"
@@ -139,7 +143,7 @@ export default function ContactDetailScreen() {
         {contact.attributes.length > 0 && (
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Атрибуты
+              {t.contactDetail.attributes}
             </Text>
             <View style={styles.attrList}>
               {contact.attributes.map((attr) => (
@@ -161,12 +165,12 @@ export default function ContactDetailScreen() {
         {pastGreetings.length > 0 && (
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Прошлые поздравления
+              {t.contactDetail.pastGreetings}
             </Text>
             {pastGreetings.slice(0, 3).map((g) => (
               <Card key={g.id} style={{ marginBottom: spacing.sm }}>
                 <Text style={[styles.pastDate, { color: colors.textSecondary }]}>
-                  {format(parseISO(g.createdAt), 'd MMM yyyy', { locale: ru })}
+                  {format(parseISO(g.createdAt), 'd MMM yyyy', { locale })}
                 </Text>
                 <Text
                   style={[styles.pastText, { color: colors.text }]}

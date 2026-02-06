@@ -33,28 +33,12 @@ import { getUpcomingAge } from '@/utils/dates';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'react-native';
+import { useT } from '@/i18n';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const MODEL_STORAGE = '@birthdayai_model';
 
-const TONE_OPTIONS: QuestionOption<ToneType>[] = [
-  { value: 'warm', label: TONE_LABELS.warm, emoji: TONE_EMOJIS.warm, description: 'Душевное и искреннее' },
-  { value: 'funny', label: TONE_LABELS.funny, emoji: TONE_EMOJIS.funny, description: 'Смешное и весёлое' },
-  { value: 'sarcastic', label: TONE_LABELS.sarcastic, emoji: TONE_EMOJIS.sarcastic, description: 'С иронией и подколами' },
-  { value: 'formal', label: TONE_LABELS.formal, emoji: TONE_EMOJIS.formal, description: 'Вежливо и уважительно' },
-  { value: 'roast', label: TONE_LABELS.roast, emoji: TONE_EMOJIS.roast, description: 'Дерзко и остроумно' },
-];
-
-const FORMAT_OPTIONS: QuestionOption<GreetingFormat>[] = [
-  { value: 'short', label: FORMAT_LABELS.short, emoji: '⚡', description: FORMAT_DESCRIPTIONS.short },
-  { value: 'long', label: FORMAT_LABELS.long, emoji: '📝', description: FORMAT_DESCRIPTIONS.long },
-  { value: 'poem', label: FORMAT_LABELS.poem, emoji: '🎭', description: FORMAT_DESCRIPTIONS.poem },
-];
-
-const BOOL_OPTIONS: QuestionOption<string>[] = [
-  { value: 'yes', label: 'Да, жги 🔥', description: 'Возраст — отличная тема для шуток' },
-  { value: 'no', label: 'Лучше нет', description: 'Обойдёмся без возрастных шуток' },
-];
+// Options are built inside the component to use translations
 
 type Step = 'tone' | 'format' | 'ageJokes' | 'customNote' | 'generating' | 'result';
 
@@ -66,6 +50,26 @@ export default function GenerateScreen() {
   const router = useRouter();
   const contact = useContactsStore((s) => s.getContact(contactId!));
   const addGreeting = useGreetingsStore((s) => s.addGreeting);
+  const t = useT();
+
+  const TONE_OPTIONS: QuestionOption<ToneType>[] = [
+    { value: 'warm', label: t.tones.warm, emoji: TONE_EMOJIS.warm, description: t.toneDescriptions.warm },
+    { value: 'funny', label: t.tones.funny, emoji: TONE_EMOJIS.funny, description: t.toneDescriptions.funny },
+    { value: 'sarcastic', label: t.tones.sarcastic, emoji: TONE_EMOJIS.sarcastic, description: t.toneDescriptions.sarcastic },
+    { value: 'formal', label: t.tones.formal, emoji: TONE_EMOJIS.formal, description: t.toneDescriptions.formal },
+    { value: 'roast', label: t.tones.roast, emoji: TONE_EMOJIS.roast, description: t.toneDescriptions.roast },
+  ];
+
+  const FORMAT_OPTIONS: QuestionOption<GreetingFormat>[] = [
+    { value: 'short', label: t.formats.short, emoji: '⚡', description: t.formatDescriptions.short },
+    { value: 'long', label: t.formats.long, emoji: '📝', description: t.formatDescriptions.long },
+    { value: 'poem', label: t.formats.poem, emoji: '🎭', description: t.formatDescriptions.poem },
+  ];
+
+  const BOOL_OPTIONS: QuestionOption<string>[] = [
+    { value: 'yes', label: t.generate.ageJokesYes, description: t.generate.ageJokesYesDesc },
+    { value: 'no', label: t.generate.ageJokesNo, description: t.generate.ageJokesNoDesc },
+  ];
 
   const [step, setStep] = useState<Step>('tone');
   const [answers, setAnswers] = useState<Partial<QuestionnaireAnswers>>({
@@ -204,10 +208,10 @@ export default function GenerateScreen() {
     if (!cardUri) return;
     const saved = await saveCardToGallery(cardUri);
     if (saved) {
-      Alert.alert('Готово', 'Открытка сохранена в галерею');
+      Alert.alert(t.generate.cardSaved, t.generate.cardSavedMsg);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } else {
-      Alert.alert('Ошибка', 'Нет разрешения на сохранение в галерею');
+      Alert.alert(t.generate.cardError, t.generate.cardErrorMsg);
     }
   };
 
@@ -216,7 +220,7 @@ export default function GenerateScreen() {
     try {
       await shareCard(cardUri);
     } catch {
-      Alert.alert('Ошибка', 'Не удалось поделиться открыткой');
+      Alert.alert(t.generate.cardError, t.generate.shareError);
     }
   };
 
@@ -248,8 +252,8 @@ export default function GenerateScreen() {
         <View style={styles.body}>
           {step === 'tone' && (
             <QuestionCard
-              question="Какой тон поздравления?"
-              subtitle={`Для ${contact.name}`}
+              question={t.generate.toneQuestion}
+              subtitle={`${t.generate.forContact} ${contact.name}`}
               options={TONE_OPTIONS}
               selected={answers.tone ?? null}
               onSelect={(v) => {
@@ -261,7 +265,7 @@ export default function GenerateScreen() {
 
           {step === 'format' && (
             <QuestionCard
-              question="Какой формат?"
+              question={t.generate.formatQuestion}
               options={FORMAT_OPTIONS}
               selected={answers.format ?? null}
               onSelect={(v) => {
@@ -273,8 +277,8 @@ export default function GenerateScreen() {
 
           {step === 'ageJokes' && (
             <QuestionCard
-              question="Возраст — тема для шуток?"
-              subtitle={`Исполняется ${getUpcomingAge(contact.birthday)}`}
+              question={t.generate.ageJokesQuestion}
+              subtitle={`${t.generate.turnsAge} ${getUpcomingAge(contact.birthday)}`}
               options={BOOL_OPTIONS}
               selected={answers.ageJokesOk ? 'yes' : 'no'}
               onSelect={(v) => {
@@ -287,13 +291,13 @@ export default function GenerateScreen() {
           {step === 'customNote' && (
             <View style={styles.customNoteContainer}>
               <Text style={[styles.questionTitle, { color: colors.text }]}>
-                Что-нибудь ещё?
+                {t.generate.customNoteTitle}
               </Text>
               <Text style={[styles.questionSubtitle, { color: colors.textSecondary }]}>
-                Упомяни что-то конкретное или оставь пустым
+                {t.generate.customNoteHint}
               </Text>
               <Input
-                placeholder="Например: недавно вернулся из Японии..."
+                placeholder={t.generate.customNotePlaceholder}
                 value={answers.customNote ?? ''}
                 onChangeText={(v) => setAnswers({ ...answers, customNote: v })}
                 multiline
@@ -302,7 +306,7 @@ export default function GenerateScreen() {
                 containerStyle={{ marginTop: spacing.xl }}
               />
               <Button
-                title="Сгенерировать! ✨"
+                title={t.generate.generateButton}
                 onPress={goNext}
                 variant="primary"
                 size="lg"
@@ -317,10 +321,10 @@ export default function GenerateScreen() {
               <Text style={styles.generatingEmoji}>🎂</Text>
               <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: spacing.xl }} />
               <Text style={[styles.generatingText, { color: colors.text }]}>
-                Генерируем поздравление...
+                {t.generate.generating}
               </Text>
               <Text style={[styles.generatingHint, { color: colors.textSecondary }]}>
-                Нейросеть подбирает слова
+                {t.generate.generatingHint}
               </Text>
             </View>
           )}
@@ -334,13 +338,13 @@ export default function GenerateScreen() {
                 <View style={styles.errorContainer}>
                   <Text style={styles.errorEmoji}>😵</Text>
                   <Text style={[styles.errorTitle, { color: colors.error }]}>
-                    Ошибка
+                    {t.generate.error}
                   </Text>
                   <Text style={[styles.errorText, { color: colors.textSecondary }]}>
                     {error}
                   </Text>
                   <Button
-                    title="Попробовать ещё"
+                    title={t.generate.tryAgain}
                     onPress={regenerate}
                     variant="primary"
                     style={{ marginTop: spacing.xl }}
@@ -350,7 +354,7 @@ export default function GenerateScreen() {
                 <>
                   <Text style={styles.resultEmoji}>🎉</Text>
                   <Text style={[styles.resultLabel, { color: colors.textSecondary }]}>
-                    Поздравление для {contact.name}
+                    {t.generate.greetingFor} {contact.name}
                   </Text>
                   <View
                     style={[
@@ -373,7 +377,7 @@ export default function GenerateScreen() {
                   <View style={[styles.cardSection, { borderColor: colors.borderLight }]}>
                     {!cardUri && !cardLoading && (
                       <Button
-                        title={cardError ? 'Попробовать снова 🎨' : 'Сгенерировать открытку 🎨'}
+                        title={cardError ? t.generate.retryCard : t.generate.generateCard}
                         onPress={handleGenerateCard}
                         variant="secondary"
                         size="lg"
@@ -390,7 +394,7 @@ export default function GenerateScreen() {
                       <View style={styles.cardLoadingContainer}>
                         <ActivityIndicator size="large" color={colors.primary} />
                         <Text style={[styles.cardLoadingText, { color: colors.textSecondary }]}>
-                          Рисуем открытку...
+                          {t.generate.drawingCard}
                         </Text>
                       </View>
                     )}
@@ -407,14 +411,14 @@ export default function GenerateScreen() {
                             onPress={handleSaveCard}
                           >
                             <Ionicons name="download-outline" size={20} color="#FFF" />
-                            <Text style={styles.cardActionText}>Сохранить</Text>
+                            <Text style={styles.cardActionText}>{t.generate.saveCard}</Text>
                           </TouchableOpacity>
                           <TouchableOpacity
                             style={[styles.cardActionBtn, { backgroundColor: colors.secondary }]}
                             onPress={handleShareCard}
                           >
                             <Ionicons name="share-outline" size={20} color="#FFF" />
-                            <Text style={styles.cardActionText}>Поделиться</Text>
+                            <Text style={styles.cardActionText}>{t.generate.shareCard}</Text>
                           </TouchableOpacity>
                         </View>
                       </View>
@@ -423,7 +427,7 @@ export default function GenerateScreen() {
 
                   <View style={styles.resultActions}>
                     <Button
-                      title="Перегенерировать"
+                      title={t.generate.regenerate}
                       onPress={regenerate}
                       variant="outline"
                       size="md"
@@ -437,7 +441,7 @@ export default function GenerateScreen() {
                       }
                     />
                     <Button
-                      title="Другой тон"
+                      title={t.generate.changeTone}
                       onPress={() => setStep('tone')}
                       variant="ghost"
                       size="md"

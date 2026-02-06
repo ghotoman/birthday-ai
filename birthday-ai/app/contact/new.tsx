@@ -13,6 +13,7 @@ import { format } from 'date-fns';
 import { useContactsStore } from '@/stores/contactsStore';
 import { useColors } from '@/hooks';
 import { Button, Input, Badge, DatePicker } from '@/components/ui';
+import { useT } from '@/i18n';
 import { spacing, borderRadius, typography } from '@/constants/Theme';
 import {
   GroupType,
@@ -35,6 +36,7 @@ export default function NewContactScreen() {
   const colors = useColors();
   const router = useRouter();
   const addContact = useContactsStore((s) => s.addContact);
+  const t = useT();
 
   const [name, setName] = useState('');
   const [birthdayDate, setBirthdayDate] = useState<Date | null>(null);
@@ -59,11 +61,11 @@ export default function NewContactScreen() {
 
   const save = async () => {
     if (!name.trim()) {
-      Alert.alert('Ошибка', 'Введи имя');
+      Alert.alert('', t.contactForm.errorName);
       return;
     }
     if (!birthdayDate) {
-      Alert.alert('Ошибка', 'Выбери дату рождения');
+      Alert.alert('', t.contactForm.errorBirthday);
       return;
     }
 
@@ -88,7 +90,7 @@ export default function NewContactScreen() {
     <>
       <Stack.Screen
         options={{
-          title: 'Новый контакт',
+          title: t.contactForm.newContact,
           headerStyle: { backgroundColor: colors.background },
           headerTintColor: colors.primary,
           headerTitleStyle: { color: colors.text },
@@ -101,8 +103,8 @@ export default function NewContactScreen() {
       >
         {/* Имя */}
         <Input
-          label="Имя"
-          placeholder="Александр Петров"
+          label={t.contactForm.name}
+          placeholder={t.contactForm.namePlaceholder}
           value={name}
           onChangeText={setName}
           autoCapitalize="words"
@@ -111,16 +113,16 @@ export default function NewContactScreen() {
 
         {/* Дата рождения — нативный пикер */}
         <DatePicker
-          label="Дата рождения"
+          label={t.contactForm.birthday}
           value={birthdayDate}
           onChange={setBirthdayDate}
-          placeholder="Выбери дату рождения"
+          placeholder={t.contactForm.birthdayPlaceholder}
           maximumDate={new Date()}
           minimumDate={new Date(1920, 0, 1)}
         />
 
         {/* Группа */}
-        <Text style={[styles.label, { color: colors.text }]}>Группа</Text>
+        <Text style={[styles.label, { color: colors.text }]}>{t.contactForm.group}</Text>
         <View style={styles.chips}>
           {GROUPS.map((g) => (
             <TouchableOpacity
@@ -147,7 +149,7 @@ export default function NewContactScreen() {
         </View>
 
         {/* Тон по умолчанию */}
-        <Text style={[styles.label, { color: colors.text }]}>Тон по умолчанию</Text>
+        <Text style={[styles.label, { color: colors.text }]}>{t.contactForm.defaultTone}</Text>
         <View style={styles.chips}>
           {TONES.map((t) => (
             <TouchableOpacity
@@ -174,7 +176,7 @@ export default function NewContactScreen() {
         </View>
 
         {/* Уведомления */}
-        <Text style={[styles.label, { color: colors.text }]}>Уведомления</Text>
+        <Text style={[styles.label, { color: colors.text }]}>{t.contactForm.notifications}</Text>
         <View style={styles.chips}>
           {NOTIFICATIONS.map((n) => (
             <TouchableOpacity
@@ -201,9 +203,9 @@ export default function NewContactScreen() {
         </View>
 
         {/* Атрибуты */}
-        <Text style={[styles.label, { color: colors.text }]}>Атрибуты</Text>
+        <Text style={[styles.label, { color: colors.text }]}>{t.contactForm.attributes}</Text>
         <Text style={[styles.hint, { color: colors.textSecondary }]}>
-          Добавь детали для более личного поздравления
+          {t.contactForm.attributesHint}
         </Text>
 
         {attributes.length > 0 && (
@@ -255,7 +257,7 @@ export default function NewContactScreen() {
           </ScrollView>
           <View style={styles.attrInputRow}>
             <Input
-              placeholder="Например: играет на гитаре"
+              placeholder={t.contactForm.attrPlaceholder}
               value={attrValue}
               onChangeText={setAttrValue}
               containerStyle={{ flex: 1 }}
@@ -273,7 +275,7 @@ export default function NewContactScreen() {
 
         {/* Сохранить */}
         <Button
-          title="Сохранить"
+          title={t.contactForm.save}
           onPress={save}
           variant="primary"
           size="lg"

@@ -16,22 +16,24 @@ import { EmptyState } from '@/components/ui';
 import { spacing, borderRadius, typography } from '@/constants/Theme';
 import { Contact, GroupType, GROUP_LABELS } from '@/types/contact';
 import { daysUntilBirthday } from '@/utils/dates';
-
-const GROUP_FILTERS: { key: GroupType | 'all'; label: string }[] = [
-  { key: 'all', label: 'Все' },
-  { key: 'family', label: 'Семья' },
-  { key: 'close_friend', label: 'Близкие' },
-  { key: 'friend', label: 'Друзья' },
-  { key: 'colleague', label: 'Коллеги' },
-  { key: 'acquaintance', label: 'Знакомые' },
-];
+import { useT } from '@/i18n';
 
 export default function ContactsScreen() {
   const colors = useColors();
   const router = useRouter();
+  const t = useT();
   const { contacts, loaded, loadContacts } = useContactsStore();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<GroupType | 'all'>('all');
+
+  const GROUP_FILTERS: { key: GroupType | 'all'; label: string }[] = [
+    { key: 'all', label: t.contacts.all },
+    { key: 'family', label: t.contacts.family },
+    { key: 'close_friend', label: t.contacts.closeFriends },
+    { key: 'friend', label: t.contacts.friends },
+    { key: 'colleague', label: t.contacts.colleagues },
+    { key: 'acquaintance', label: t.contacts.acquaintances },
+  ];
 
   useEffect(() => {
     loadContacts();
@@ -62,7 +64,7 @@ export default function ContactsScreen() {
           <Ionicons name="search" size={18} color={colors.textTertiary} />
           <TextInput
             style={[styles.searchInput, { color: colors.text }]}
-            placeholder="Поиск..."
+            placeholder={t.contacts.search}
             placeholderTextColor={colors.textTertiary}
             value={search}
             onChangeText={setSearch}
@@ -115,13 +117,13 @@ export default function ContactsScreen() {
       {filtered.length === 0 ? (
         <EmptyState
           emoji="👥"
-          title={contacts.length === 0 ? 'Нет контактов' : 'Ничего не найдено'}
+          title={contacts.length === 0 ? t.contacts.noContacts : t.contacts.nothingFound}
           description={
             contacts.length === 0
-              ? 'Добавь друзей, чтобы не забывать о днях рождения'
-              : 'Попробуй изменить фильтр или поисковый запрос'
+              ? t.contacts.noContactsDesc
+              : t.contacts.nothingFoundDesc
           }
-          actionTitle={contacts.length === 0 ? 'Добавить контакт' : undefined}
+          actionTitle={contacts.length === 0 ? t.contacts.addContact : undefined}
           onAction={
             contacts.length === 0
               ? () => router.push('/contact/new')

@@ -12,6 +12,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColors } from '@/hooks';
 import { spacing, borderRadius, typography, shadows } from '@/constants/Theme';
 import { AI_MODELS, AIModelId, DEFAULT_MODEL } from '@/services/ai';
+import { useI18n, useT, Language } from '@/i18n';
 
 const MODEL_STORAGE = '@birthdayai_model';
 
@@ -63,6 +64,8 @@ function SettingsRow({
 export default function SettingsScreen() {
   const colors = useColors();
   const router = useRouter();
+  const t = useT();
+  const { language, setLanguage } = useI18n();
   const [selectedModel, setSelectedModel] = useState<AIModelId>(DEFAULT_MODEL);
 
   useEffect(() => {
@@ -76,6 +79,11 @@ export default function SettingsScreen() {
     await AsyncStorage.setItem(MODEL_STORAGE, model);
   };
 
+  const toggleLanguage = async () => {
+    const next: Language = language === 'ru' ? 'en' : 'ru';
+    await setLanguage(next);
+  };
+
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
@@ -83,7 +91,7 @@ export default function SettingsScreen() {
     >
       {/* Выбор модели */}
       <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
-        МОДЕЛЬ ДЛЯ ГЕНЕРАЦИИ
+        {t.settings.aiModel}
       </Text>
       <View
         style={[
@@ -138,41 +146,48 @@ export default function SettingsScreen() {
 
       {/* Общие */}
       <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
-        ОБЩИЕ
+        {t.settings.general}
       </Text>
       <View style={styles.rowGroup}>
         <SettingsRow
+          icon="language"
+          iconColor="#3B82F6"
+          title={t.settings.language}
+          subtitle={language === 'ru' ? '🇷🇺 Русский' : '🇬🇧 English'}
+          onPress={toggleLanguage}
+        />
+        <SettingsRow
           icon="notifications"
           iconColor={colors.warning}
-          title="Уведомления"
-          subtitle="Настроить напоминания о ДР"
+          title={t.settings.notifications}
+          subtitle={t.settings.notificationsDesc}
           onPress={() => {}}
         />
         <SettingsRow
           icon="cloud-download"
           iconColor={colors.secondary}
-          title="Импорт контактов"
-          subtitle="VK, OK, Контакты телефона"
+          title={t.settings.importContacts}
+          subtitle={t.settings.importContactsDesc}
           onPress={() => router.push('/import' as any)}
         />
         <SettingsRow
           icon="color-palette"
           iconColor="#F472B6"
-          title="Тема оформления"
-          subtitle="Авто (по системе)"
+          title={t.settings.theme}
+          subtitle={t.settings.themeDesc}
         />
       </View>
 
       {/* О приложении */}
       <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
-        О ПРИЛОЖЕНИИ
+        {t.settings.about}
       </Text>
       <View style={styles.rowGroup}>
         <SettingsRow
           icon="information-circle"
           iconColor={colors.primary}
           title="BirthdayAI"
-          subtitle="Версия 1.0.0"
+          subtitle={t.settings.version}
         />
       </View>
     </ScrollView>

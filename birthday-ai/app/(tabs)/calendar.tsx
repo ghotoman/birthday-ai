@@ -6,10 +6,12 @@ import { useColors } from '@/hooks';
 import { BirthdayCalendar } from '@/components/calendar/BirthdayCalendar';
 import { EmptyState } from '@/components/ui';
 import { Contact } from '@/types/contact';
+import { useT } from '@/i18n';
 
 export default function CalendarScreen() {
   const colors = useColors();
   const router = useRouter();
+  const t = useT();
   const { contacts, loaded, loadContacts } = useContactsStore();
 
   useEffect(() => {
@@ -25,9 +27,9 @@ export default function CalendarScreen() {
       <View style={[styles.empty, { backgroundColor: colors.background }]}>
         <EmptyState
           emoji="📅"
-          title="Календарь пуст"
-          description="Добавьте контакты, чтобы увидеть дни рождения в календаре"
-          actionLabel="Добавить контакт"
+          title={t.calendar.emptyTitle}
+          description={t.calendar.emptyDescription}
+          actionTitle={t.calendar.addContact}
           onAction={() => router.push('/contact/new')}
         />
       </View>

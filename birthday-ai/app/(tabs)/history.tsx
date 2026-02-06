@@ -9,10 +9,13 @@ import { spacing, typography, borderRadius } from '@/constants/Theme';
 import { TONE_LABELS, TONE_EMOJIS } from '@/types/contact';
 import { FORMAT_LABELS, Greeting } from '@/types/greeting';
 import { format, parseISO } from 'date-fns';
-import { ru } from 'date-fns/locale';
+import { ru, enUS } from 'date-fns/locale';
+import { useT, useI18n } from '@/i18n';
 
 function GreetingItem({ greeting }: { greeting: Greeting }) {
   const colors = useColors();
+  const lang = useI18n((s) => s.language);
+  const locale = lang === 'ru' ? ru : enUS;
 
   return (
     <Card style={styles.greetingCard}>
@@ -23,7 +26,7 @@ function GreetingItem({ greeting }: { greeting: Greeting }) {
           </Text>
           <Text style={[styles.greetingDate, { color: colors.textSecondary }]}>
             {format(parseISO(greeting.createdAt), 'd MMM yyyy, HH:mm', {
-              locale: ru,
+              locale,
             })}
           </Text>
         </View>
@@ -56,13 +59,15 @@ export default function HistoryScreen() {
 
   const recent = getRecent(50);
 
+  const t = useT();
+
   if (loaded && greetings.length === 0) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <EmptyState
           emoji="📝"
-          title="Пока пусто"
-          description="Здесь будет история всех твоих поздравлений"
+          title={t.history.emptyTitle}
+          description={t.history.emptyDescription}
         />
       </View>
     );

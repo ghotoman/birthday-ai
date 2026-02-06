@@ -15,12 +15,14 @@ import { UpcomingCarousel } from '@/components/home/UpcomingCarousel';
 import { ContactCard } from '@/components/contacts/ContactCard';
 import { EmptyState } from '@/components/ui';
 import { spacing, typography, borderRadius, shadows } from '@/constants/Theme';
+import { useT } from '@/i18n';
 
 export default function HomeScreen() {
   const colors = useColors();
   const router = useRouter();
   const { contacts, loaded, loadContacts, getUpcoming, getTodayBirthdays } =
     useContactsStore();
+  const t = useT();
   const [refreshing, setRefreshing] = React.useState(false);
 
   useEffect(() => {
@@ -41,9 +43,9 @@ export default function HomeScreen() {
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <EmptyState
           emoji="🎂"
-          title="Пока никого нет"
-          description="Добавь первого друга, чтобы никогда не забывать о днях рождения"
-          actionTitle="Добавить контакт"
+          title={t.home.emptyTitle}
+          description={t.home.emptyDescription}
+          actionTitle={t.home.emptyAction}
           onAction={() => router.push('/contact/new')}
         />
       </View>
@@ -72,7 +74,7 @@ export default function HomeScreen() {
         >
           <Text style={styles.todayEmoji}>🎉</Text>
           <Text style={[styles.todayTitle, { color: colors.primary }]}>
-            Сегодня день рождения!
+            {t.home.todayBirthday}
           </Text>
           {todayBirthdays.map((c) => (
             <TouchableOpacity
@@ -88,7 +90,7 @@ export default function HomeScreen() {
               <Text style={styles.todayName}>{c.name}</Text>
               <View style={styles.todayBtn}>
                 <Ionicons name="gift" size={18} color="#FFF" />
-                <Text style={styles.todayBtnText}>Поздравить</Text>
+                <Text style={styles.todayBtnText}>{t.home.congratulate}</Text>
               </View>
             </TouchableOpacity>
           ))}
@@ -111,7 +113,7 @@ export default function HomeScreen() {
         >
           <Ionicons name="person-add" size={22} color={colors.primary} />
           <Text style={[styles.actionText, { color: colors.text }]}>
-            Добавить
+            {t.home.addContact}
           </Text>
         </TouchableOpacity>
 
@@ -126,7 +128,7 @@ export default function HomeScreen() {
         >
           <Ionicons name="cloud-download" size={22} color={colors.secondary} />
           <Text style={[styles.actionText, { color: colors.text }]}>
-            Импорт
+            {t.home.import}
           </Text>
         </TouchableOpacity>
       </View>
@@ -135,7 +137,7 @@ export default function HomeScreen() {
       {upcoming.length > 0 && (
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Скоро
+            {t.home.upcoming}
           </Text>
           {upcoming.slice(0, 5).map((contact) => (
             <ContactCard key={contact.id} contact={contact} />

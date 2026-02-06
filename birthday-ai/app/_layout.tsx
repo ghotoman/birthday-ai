@@ -11,6 +11,7 @@ import 'react-native-reanimated';
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 import { useContactsStore } from '@/stores/contactsStore';
+import { useI18n } from '@/i18n';
 import {
   requestNotificationPermissions,
   rescheduleAllNotifications,
@@ -47,7 +48,13 @@ export default function RootLayout() {
   const contactsLoaded = useContactsStore((s) => s.loaded);
   const loadContacts = useContactsStore((s) => s.loadContacts);
 
+  // Загрузка языка
+  const loadLanguage = useI18n((s) => s.loadLanguage);
+  const langLoaded = useI18n((s) => s.loaded);
+  const languageChosen = useI18n((s) => s.languageChosen);
+
   useEffect(() => {
+    loadLanguage();
     loadContacts();
     requestNotificationPermissions();
   }, []);
@@ -59,14 +66,14 @@ export default function RootLayout() {
     }
   }, [contactsLoaded, contacts]);
 
-  if (!loaded) {
+  if (!loaded || !langLoaded) {
     return null;
   }
 
-  return <RootLayoutNav />;
+  return <RootLayoutNav showLanguagePicker={!languageChosen} />;
 }
 
-function RootLayoutNav() {
+function RootLayoutNav({ showLanguagePicker }: { showLanguagePicker: boolean }) {
   const colorScheme = useColorScheme() ?? 'light';
   const colors = Colors[colorScheme];
   const router = useRouter();
@@ -116,7 +123,8 @@ function RootLayoutNav() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? darkTheme : lightTheme}>
-      <Stack>
+      <Stack initialRouteName={showLanguagePicker ? 'language' : '(tabs)'}>
+        <Stack.Screen name="language" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen
           name="contact/new"

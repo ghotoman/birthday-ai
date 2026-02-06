@@ -5,6 +5,7 @@ import { Platform } from 'react-native';
 
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
+import { useT } from '@/i18n';
 
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof Ionicons>['name'];
@@ -16,6 +17,7 @@ function TabBarIcon(props: {
 export default function TabLayout() {
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
+  const t = useT();
 
   return (
     <Tabs
@@ -49,7 +51,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Главная',
+          title: t.tabs.home,
           tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
           headerTitle: 'BirthdayAI',
           headerTitleStyle: {
@@ -62,14 +64,14 @@ export default function TabLayout() {
       <Tabs.Screen
         name="contacts"
         options={{
-          title: 'Контакты',
+          title: t.tabs.contacts,
           tabBarIcon: ({ color }) => <TabBarIcon name="people" color={color} />,
         }}
       />
       <Tabs.Screen
         name="calendar"
         options={{
-          title: 'Календарь',
+          title: t.tabs.calendar,
           tabBarIcon: ({ color }) => (
             <TabBarIcon name="calendar" color={color} />
           ),
@@ -78,14 +80,14 @@ export default function TabLayout() {
       <Tabs.Screen
         name="history"
         options={{
-          title: 'История',
+          title: t.tabs.history,
           tabBarIcon: ({ color }) => <TabBarIcon name="time" color={color} />,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: 'Настройки',
+          title: t.tabs.settings,
           tabBarIcon: ({ color }) => (
             <TabBarIcon name="settings-outline" color={color} />
           ),
