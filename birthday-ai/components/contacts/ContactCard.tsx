@@ -80,8 +80,7 @@ export function ContactCard({ contact, compact = false }: ContactCardProps) {
         {isToday && (
           <TouchableOpacity
             style={[styles.greetBtn, { backgroundColor: colors.primary }]}
-            onPress={(e) => {
-              e.stopPropagation?.();
+            onPress={() => {
               router.push(`/generate/${contact.id}`);
             }}
           >

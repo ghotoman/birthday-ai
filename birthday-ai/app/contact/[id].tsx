@@ -51,8 +51,12 @@ export default function ContactDetailScreen() {
     );
   }
 
-  const days = daysUntilBirthday(contact.birthday);
-  const isToday = days === 0;
+  let days = 0;
+  let isToday = false;
+  try {
+    days = daysUntilBirthday(contact.birthday);
+    isToday = days === 0;
+  } catch {}
 
   const handleDelete = () => {
     Alert.alert(t.contactDetail.deleteTitle, `${contact.name} ${t.contactDetail.deleteMessage}`, [
@@ -96,7 +100,7 @@ export default function ContactDetailScreen() {
           <Avatar name={contact.name} imageUrl={contact.avatarUrl} size="xl" />
           <Text style={[styles.name, { color: colors.text }]}>{contact.name}</Text>
           <Text style={[styles.birthday, { color: colors.textSecondary }]}>
-            {formatBirthdayFull(contact.birthday)} · {getAge(contact.birthday)} лет
+            {(() => { try { return `${formatBirthdayFull(contact.birthday)} · ${getAge(contact.birthday)} лет`; } catch { return contact.birthday; } })()}
           </Text>
           <View
             style={[
@@ -112,8 +116,8 @@ export default function ContactDetailScreen() {
                 { color: isToday ? colors.primary : '#B45309' },
               ]}
             >
-              {birthdayCountdownText(contact.birthday)}
-              {!isToday && ` · ${t.contactDetail.turnsAge} ${getUpcomingAge(contact.birthday)}`}
+              {(() => { try { return birthdayCountdownText(contact.birthday); } catch { return ''; } })()}
+              {!isToday && (() => { try { return ` · ${t.contactDetail.turnsAge} ${getUpcomingAge(contact.birthday)}`; } catch { return ''; } })()}
             </Text>
           </View>
         </View>
@@ -131,12 +135,12 @@ export default function ContactDetailScreen() {
 
         {/* Инфо */}
         <Card style={{ marginBottom: spacing.md }}>
-          <InfoRow label="Группа" value={GROUP_LABELS[contact.groupType]} />
+          <InfoRow label="Группа" value={GROUP_LABELS[contact.groupType] ?? contact.groupType} />
           <InfoRow
             label="Тон"
-            value={`${TONE_EMOJIS[contact.toneDefault]} ${TONE_LABELS[contact.toneDefault]}`}
+            value={`${TONE_EMOJIS[contact.toneDefault] ?? ''} ${TONE_LABELS[contact.toneDefault] ?? contact.toneDefault}`}
           />
-          <InfoRow label="Уведомления" value={NOTIFICATION_LABELS[contact.notificationLevel]} />
+          <InfoRow label="Уведомления" value={NOTIFICATION_LABELS[contact.notificationLevel] ?? contact.notificationLevel} />
         </Card>
 
         {/* Атрибуты */}
@@ -170,7 +174,7 @@ export default function ContactDetailScreen() {
             {pastGreetings.slice(0, 3).map((g) => (
               <Card key={g.id} style={{ marginBottom: spacing.sm }}>
                 <Text style={[styles.pastDate, { color: colors.textSecondary }]}>
-                  {format(parseISO(g.createdAt), 'd MMM yyyy', { locale })}
+                  {(() => { try { return format(parseISO(g.createdAt), 'd MMM yyyy', { locale }); } catch { return g.createdAt; } })()}
                 </Text>
                 <Text
                   style={[styles.pastText, { color: colors.text }]}

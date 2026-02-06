@@ -5,44 +5,51 @@ import { getNextBirthday, getUpcomingAge } from '@/utils/dates';
 import { subDays } from 'date-fns';
 
 // Конфигурация уведомлений
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+try {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+    }),
+  });
+} catch (err) {
+  console.warn('Failed to set notification handler:', err);
+}
 
 /**
  * Запрос разрешений на Push-уведомления
  */
 export async function requestNotificationPermissions(): Promise<boolean> {
-  const { status: existing } = await Notifications.getPermissionsAsync();
-  let finalStatus = existing;
+  try {
+    const { status: existing } = await Notifications.getPermissionsAsync();
+    let finalStatus = existing;
 
-  if (existing !== 'granted') {
-    const { status } = await Notifications.requestPermissionsAsync();
-    finalStatus = status;
-  }
+    if (existing !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
 
-  if (finalStatus !== 'granted') {
+    if (finalStatus !== 'granted') {
+      return false;
+    }
+
+    // Android: создаём канал уведомлений
+    if (Platform.OS === 'android') {
+      await Notifications.setNotificationChannelAsync('birthdays', {
+        name: 'Дни рождения',
+        importance: Notifications.AndroidImportance?.HIGH ?? 4,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#FF4D6D',
+        sound: 'default',
+      });
+    }
+
+    return true;
+  } catch (err) {
+    console.warn('Failed to request notification permissions:', err);
     return false;
   }
-
-  // Android: создаём канал уведомлений
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('birthdays', {
-      name: 'Дни рождения',
-      importance: Notifications.AndroidImportance.HIGH,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#FF4D6D',
-      sound: 'default',
-    });
-  }
-
-  return true;
 }
 
 /**
@@ -127,20 +134,23 @@ export async function scheduleContactNotifications(contact: Contact): Promise<vo
 
     const { title, body } = getNotificationBody(contact, daysBefore);
 
-    await Notifications.scheduleNotificationAsync({
-      identifier: notificationId(contact.id, daysBefore),
-      content: {
-        title,
-        body,
-        data: { contactId: contact.id, type: 'birthday_reminder' },
-        sound: 'default',
-        ...(Platform.OS === 'android' ? { channelId: 'birthdays' } : {}),
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DATE,
-        date: notifDate,
-      },
-    });
+    try {
+      await Notifications.scheduleNotificationAsync({
+        identifier: notificationId(contact.id, daysBefore),
+        content: {
+          title,
+          body,
+          data: { contactId: contact.id, type: 'birthday_reminder' },
+          sound: 'default',
+          ...(Platform.OS === 'android' ? { channelId: 'birthdays' } : {}),
+        },
+        trigger: Notifications.SchedulableTriggerInputTypes
+          ? { type: Notifications.SchedulableTriggerInputTypes.DATE, date: notifDate }
+          : { date: notifDate } as any,
+      });
+    } catch (err) {
+      console.warn('Failed to schedule notification for', contact.name, err);
+    }
   }
 }
 
@@ -158,12 +168,16 @@ export async function cancelContactNotifications(contactId: string): Promise<voi
  * Переплаировать уведомления для всех контактов
  */
 export async function rescheduleAllNotifications(contacts: Contact[]): Promise<void> {
-  // Сначала удаляем все запланированные
-  await Notifications.cancelAllScheduledNotificationsAsync();
+  try {
+    // Сначала удаляем все запланированные
+    await Notifications.cancelAllScheduledNotificationsAsync();
 
-  // Планируем заново
-  for (const contact of contacts) {
-    await scheduleContactNotifications(contact);
+    // Планируем заново
+    for (const contact of contacts) {
+      await scheduleContactNotifications(contact);
+    }
+  } catch (err) {
+    console.warn('Failed to reschedule notifications:', err);
   }
 }
 

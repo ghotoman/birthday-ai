@@ -11,6 +11,7 @@ import 'react-native-reanimated';
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 import { useContactsStore } from '@/stores/contactsStore';
+import { useGreetingsStore } from '@/stores/greetingsStore';
 import { useI18n } from '@/i18n';
 import {
   requestNotificationPermissions,
@@ -48,6 +49,9 @@ export default function RootLayout() {
   const contactsLoaded = useContactsStore((s) => s.loaded);
   const loadContacts = useContactsStore((s) => s.loadContacts);
 
+  // Загрузка истории поздравлений
+  const loadGreetings = useGreetingsStore((s) => s.loadGreetings);
+
   // Загрузка языка
   const loadLanguage = useI18n((s) => s.loadLanguage);
   const langLoaded = useI18n((s) => s.loaded);
@@ -56,13 +60,16 @@ export default function RootLayout() {
   useEffect(() => {
     loadLanguage();
     loadContacts();
-    requestNotificationPermissions();
+    loadGreetings();
+    requestNotificationPermissions().catch(() => {});
   }, []);
 
   // Переплаировать уведомления при изменении контактов
   useEffect(() => {
     if (contactsLoaded && contacts.length > 0) {
-      rescheduleAllNotifications(contacts);
+      rescheduleAllNotifications(contacts).catch((err) =>
+        console.warn('Failed to schedule notifications:', err)
+      );
     }
   }, [contactsLoaded, contacts]);
 

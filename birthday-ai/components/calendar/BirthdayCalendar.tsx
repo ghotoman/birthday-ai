@@ -246,7 +246,7 @@ export function BirthdayCalendar({ contacts, onContactPress }: BirthdayCalendarP
               onPress={() => onContactPress(contact)}
               activeOpacity={0.6}
             >
-              <Avatar name={contact.name} size={44} />
+              <Avatar name={contact.name} size="md" />
               <View style={styles.contactInfo}>
                 <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>
                   {contact.name}
@@ -291,7 +291,7 @@ export function BirthdayCalendar({ contacts, onContactPress }: BirthdayCalendarP
                       {day}
                     </Text>
                   </View>
-                  <Avatar name={contact.name} size={40} />
+                  <Avatar name={contact.name} size="md" />
                   <View style={styles.contactInfo}>
                     <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>
                       {contact.name}
