@@ -59,7 +59,7 @@ export async function generateRoutes(app: FastifyInstance) {
     async (request, reply) => {
       const {
         prompt,
-        model = 'google/gemini-2.0-flash-exp:free',
+        model = 'google/gemini-2.5-flash-image',
         aspect_ratio = '1:1',
       } = request.body;
 
