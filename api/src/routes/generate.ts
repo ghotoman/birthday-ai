@@ -102,15 +102,29 @@ export async function generateRoutes(app: FastifyInstance) {
 
         // Логируем структуру ответа для отладки
         app.log.info(`Image response keys: ${JSON.stringify(Object.keys(message || {}))}`);
-        app.log.info(`Content type: ${typeof message?.content}, is array: ${Array.isArray(message?.content)}`);
+        if (message?.images?.[0]) {
+          app.log.info(`First image keys: ${JSON.stringify(Object.keys(message.images[0]))}`);
+          // Логируем начало URL (без base64 данных)
+          const firstImg = message.images[0];
+          const urlPreview = (firstImg.image_url?.url || firstImg.url || 'EMPTY').substring(0, 80);
+          app.log.info(`First image url preview: ${urlPreview}`);
+        }
 
         // 1) Поле images (стандарт OpenRouter)
         if (message?.images && message.images.length > 0) {
-          return reply.send({
-            data: message.images.map((img: any) => ({
-              url: img.image_url?.url || img.url || '',
-            })),
+          const extracted = message.images.map((img: any) => {
+            // Пробуем все возможные форматы
+            const url = img.image_url?.url  // { image_url: { url: "data:..." } }
+              || img.url                     // { url: "data:..." }
+              || img.b64_json                // { b64_json: "iVBOR..." }
+              || '';
+            return { url };
           });
+
+          if (extracted[0]?.url) {
+            return reply.send({ data: extracted });
+          }
+          app.log.error(`Extracted URL is empty. Raw image: ${JSON.stringify(message.images[0]).substring(0, 500)}`);
         }
 
         // 2) content как массив multipart (некоторые модели)
