@@ -98,22 +98,37 @@ export async function generateRoutes(app: FastifyInstance) {
         }
 
         const data: any = await response.json();
-
-        // Извлекаем base64 картинку из ответа OpenRouter
         const message = data?.choices?.[0]?.message;
-        const images = message?.images;
 
-        if (images && images.length > 0) {
-          // Возвращаем в формате совместимом с клиентом
+        // Логируем структуру ответа для отладки
+        app.log.info(`Image response keys: ${JSON.stringify(Object.keys(message || {}))}`);
+        app.log.info(`Content type: ${typeof message?.content}, is array: ${Array.isArray(message?.content)}`);
+
+        // 1) Поле images (стандарт OpenRouter)
+        if (message?.images && message.images.length > 0) {
           return reply.send({
-            data: images.map((img: any) => ({
+            data: message.images.map((img: any) => ({
               url: img.image_url?.url || img.url || '',
             })),
           });
         }
 
-        // Fallback: если images пустой, проверяем content на base64
-        if (message?.content) {
+        // 2) content как массив multipart (некоторые модели)
+        if (Array.isArray(message?.content)) {
+          const imageParts = message.content.filter(
+            (p: any) => p.type === 'image_url' || p.type === 'image'
+          );
+          if (imageParts.length > 0) {
+            return reply.send({
+              data: imageParts.map((p: any) => ({
+                url: p.image_url?.url || p.url || '',
+              })),
+            });
+          }
+        }
+
+        // 3) content как строка с base64 data URL
+        if (typeof message?.content === 'string') {
           const base64Match = message.content.match(/data:image\/[^;]+;base64,[A-Za-z0-9+/=]+/);
           if (base64Match) {
             return reply.send({
@@ -122,7 +137,8 @@ export async function generateRoutes(app: FastifyInstance) {
           }
         }
 
-        app.log.error('No images in OpenRouter response');
+        // Ничего не нашли — логируем полный ответ
+        app.log.error(`No images found. Full message: ${JSON.stringify(message).substring(0, 2000)}`);
         return reply.status(500).send({
           error: 'No image generated',
           details: 'AI model did not return an image',
