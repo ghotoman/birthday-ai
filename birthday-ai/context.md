@@ -26,6 +26,11 @@
 | Date Picker | @react-native-community/datetimepicker | — |
 | Файловая система | expo-file-system + expo-media-library | — |
 | Шаринг файлов | expo-sharing | — |
+| Бэкенд | Fastify (Node.js/TS) | — |
+| Деплой | Docker + docker-compose | — |
+| SSL | Let's Encrypt (certbot) | — |
+| Reverse proxy | Nginx | alpine |
+| Домен | api.birthdayai.net | MevSpace сервер |
 
 ---
 
@@ -93,7 +98,7 @@ birthday-ai/
 │       ├── config.ts            # APP_ID для VK и OK (заменить на свои)
 │       ├── vk.ts                # VK OAuth + friends.get с bdate → Contact[]
 │       ├── ok.ts                # OK OAuth + users.getInfo с birthday → Contact[]
-│       ├── device.ts            # expo-contacts → контакты с ДР
+│       ├── device.ts            # expo-contacts → importDeviceContacts (с ДР) + importAllDeviceContacts (все)
 │       └── index.ts             # Реэкспорт
 │
 ├── types/
@@ -101,7 +106,7 @@ birthday-ai/
 │   └── greeting.ts              # Greeting, QuestionnaireAnswers, GreetingFormat
 │
 ├── utils/
-│   └── dates.ts                 # getAge, daysUntilBirthday, formatBirthday, склонения
+│   └── dates.ts                 # getAge, daysUntilBirthday, formatBirthday, hasBirthday, склонения
 │
 ├── assets/                      # Шрифты, иконки, сплэш
 ├── app.json                     # Expo конфиг
@@ -149,12 +154,13 @@ birthday-ai/
 
 ## Что НЕ сделано (следующие фазы)
 
-### Фаза 3: Соцсети и импорт
+### Фаза 3: Соцсети и импорт — DONE (основное)
 - [x] VK OAuth + импорт друзей с датами ДР
 - [x] OK OAuth + импорт
-- [ ] Импорт из календаря устройства (expo-calendar)
-- [x] Импорт из контактов устройства (expo-contacts)
+- [x] Импорт контактов с ДР (expo-contacts)
+- [x] Импорт ВСЕХ контактов телефонной книги (имя + телефон + фото, ДР опционально)
 - [x] Дедупликация (по source+sourceId и по имя+дата)
+- [ ] Импорт из календаря устройства (expo-calendar)
 - [ ] Фоновая синхронизация
 
 ### Фаза 4: Polish и монетизация
@@ -188,20 +194,33 @@ birthday-ai/
 | 8 | Дата как строка YYYY-MM-DD | Проще сериализация, без проблем с таймзонами |
 | 9 | Тёплая палитра (коралл/фиолет) | Дружелюбный, праздничный вид для birthday-приложения |
 | 10 | Модал для создания контакта | Быстрое действие без потери контекста |
+| 11 | SSL через Let's Encrypt + nginx | Бесплатный, авто-обновление, Android не блокирует HTTPS |
+| 12 | Домен api.birthdayai.net (TimeWeb) + сервер MevSpace | Домен и хостинг у разных провайдеров, связаны через A-запись |
+| 13 | Contact.birthday может быть пустой строкой | Импорт всех контактов без ДР, `hasBirthday()` guard везде |
+| 14 | Contact.phone — опциональное поле | Для отображения вместо ДР если дата не указана |
 
 ---
 
 ## Известные ограничения
 
-- URL бэкенда зашит в `constants/Api.ts` — перед билдом заменить на свой
+- ~~URL бэкенда зашит в `constants/Api.ts`~~ → теперь `https://api.birthdayai.net` (SSL настроен)
 - Нет анимаций при переходах между шагами генерации
 - Нет offline fallback при недоступности API
-- Фото контактов не поддерживаются (только инициалы)
 - Генерация открыток зависит от поддержки images API в OpenRouter
 
 ---
 
 ## Исправленные баги и уроки
+
+### BUG-002: "Network request failed" при генерации поздравления (2026-02-07)
+
+**Симптом:** После нажатия "Сгенерировать" появлялась ошибка "Network request failed".
+
+**Корневая причина:** Android 9+ блокирует plain HTTP (cleartext traffic) по умолчанию. Бэкенд работал по `http://195.3.220.63:3000`, и Android резал запрос.
+
+**Решение:** Настроен SSL — домен `api.birthdayai.net`, nginx reverse proxy, Let's Encrypt сертификат. `API_BASE_URL` обновлён на `https://api.birthdayai.net`.
+
+**Урок:** Всегда использовать HTTPS для production. Если временно нужен HTTP — добавить `usesCleartextTraffic: true` в `app.json` для Android.
 
 ### BUG-001: Crash "undefined is not a function" при открытии контакта (2026-02-07)
 
@@ -236,13 +255,13 @@ birthday-ai/
 ## Последнее обновление
 
 **Дата:** 2026-02-07
-**Что сделано:** Критический багфикс — crash при тапе на контакт:
-- Добавлен expo-notifications plugin в app.json
-- Обёрнуты notification-вызовы в try/catch
-- Исправлен trigger type для уведомлений (enum → строковый литерал)
-- Avatar поддерживает числовой size
-- greetingsStore загружается при старте
-- Защитные проверки в contact detail screen
-- Подробный разбор бага в секции «Исправленные баги и уроки»
+**Что сделано:**
+- **SSL + домен**: api.birthdayai.net, nginx + certbot, docker-compose обновлён
+- **Импорт всех контактов**: новая функция `importAllDeviceContacts()` — имя, телефон, фото; ДР опционально
+- **phone поле**: добавлено в Contact, отображается в ContactCard если нет ДР
+- **hasBirthday() guard**: все функции в dates.ts безопасны для пустого birthday
+- **KeyboardAvoidingView**: клавиатура не перекрывает поле атрибутов (new + edit)
+- **EAS Update channel**: добавлен `"channel": "preview"` в eas.json
+- **Багфиксы**: BUG-001 (crash на контакте), BUG-002 (network request failed)
 
-**Предыдущее (2026-02-06):** i18n (русский/английский), Фаза 2 полностью завершена, бэкенд работает по IP без домена
+**Предыдущее (2026-02-06):** i18n (русский/английский), Фаза 2 полностью завершена
