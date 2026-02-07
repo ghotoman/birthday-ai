@@ -1,10 +1,4 @@
 /**
  * URL бэкенда. Зашит в билд — конечный пользователь ничего не настраивает.
- *
- * Замени IP на свой сервер:
- *   http://YOUR_SERVER_IP:3000
- *
- * Когда купишь домен + SSL, поменяй на:
- *   https://api.твойдомен.com
  */
-export const API_BASE_URL = 'http://195.3.220.63:3000';  // ← ЗАМЕНИ IP НА СВОЙ
+export const API_BASE_URL = 'https://api.birthdayai.net';

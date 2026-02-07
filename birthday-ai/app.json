@@ -15,11 +15,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "infoPlist": {
-        "NSAppTransportSecurity": {
-          "NSAllowsArbitraryLoads": true
-        }
-      }
+      "bundleIdentifier": "com.garos.birthdayai"
     },
     "android": {
       "adaptiveIcon": {
@@ -28,8 +24,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.garos.birthdayai",
-      "usesCleartextTraffic": true
+      "package": "com.garos.birthdayai"
     },
     "web": {
       "bundler": "metro",
