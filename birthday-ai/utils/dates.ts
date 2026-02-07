@@ -12,9 +12,17 @@ import {
 import { ru } from 'date-fns/locale';
 
 /**
+ * Есть ли дата рождения
+ */
+export function hasBirthday(birthday: string): boolean {
+  return !!birthday && birthday.length >= 10;
+}
+
+/**
  * Получить возраст по дате рождения
  */
 export function getAge(birthday: string): number {
+  if (!hasBirthday(birthday)) return 0;
   return differenceInYears(new Date(), parseISO(birthday));
 }
 
@@ -22,6 +30,7 @@ export function getAge(birthday: string): number {
  * Получить следующий день рождения (дату)
  */
 export function getNextBirthday(birthday: string): Date {
+  if (!hasBirthday(birthday)) return new Date(9999, 0, 1); // далеко в будущем
   const bday = parseISO(birthday);
   const today = startOfDay(new Date());
   const thisYear = today.getFullYear();
@@ -37,6 +46,7 @@ export function getNextBirthday(birthday: string): Date {
  * Дней до следующего ДР
  */
 export function daysUntilBirthday(birthday: string): number {
+  if (!hasBirthday(birthday)) return 9999;
   const next = getNextBirthday(birthday);
   const today = startOfDay(new Date());
   return differenceInDays(startOfDay(next), today);
@@ -46,6 +56,7 @@ export function daysUntilBirthday(birthday: string): number {
  * Сегодня ли ДР
  */
 export function isBirthdayToday(birthday: string): boolean {
+  if (!hasBirthday(birthday)) return false;
   return daysUntilBirthday(birthday) === 0;
 }
 
@@ -53,6 +64,7 @@ export function isBirthdayToday(birthday: string): boolean {
  * Форматировать дату рождения: "15 марта"
  */
 export function formatBirthday(birthday: string): string {
+  if (!hasBirthday(birthday)) return 'ДР не указан';
   return format(parseISO(birthday), 'd MMMM', { locale: ru });
 }
 
@@ -60,6 +72,7 @@ export function formatBirthday(birthday: string): string {
  * Форматировать дату рождения с годом: "15 марта 1990"
  */
 export function formatBirthdayFull(birthday: string): string {
+  if (!hasBirthday(birthday)) return 'Дата не указана';
   return format(parseISO(birthday), 'd MMMM yyyy', { locale: ru });
 }
 
@@ -67,6 +80,7 @@ export function formatBirthdayFull(birthday: string): string {
  * Текст обратного отсчёта: "Сегодня!", "Завтра", "Через 5 дней"
  */
 export function birthdayCountdownText(birthday: string): string {
+  if (!hasBirthday(birthday)) return 'ДР не указан';
   const days = daysUntilBirthday(birthday);
   if (days === 0) return 'Сегодня! 🎉';
   if (days === 1) return 'Завтра';
@@ -91,6 +105,7 @@ function pluralDays(n: number): string {
  * Какой возраст будет в следующий ДР
  */
 export function getUpcomingAge(birthday: string): number {
+  if (!hasBirthday(birthday)) return 0;
   const next = getNextBirthday(birthday);
   const bday = parseISO(birthday);
   return differenceInYears(next, bday);

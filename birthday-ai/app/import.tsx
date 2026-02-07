@@ -15,9 +15,9 @@ import { useColors } from '@/hooks';
 import { Card, Button } from '@/components/ui';
 import { spacing, borderRadius, typography, shadows } from '@/constants/Theme';
 import { Contact } from '@/types/contact';
-import { vkImportFriends, okImportFriends, importDeviceContacts } from '@/services/social';
+import { vkImportFriends, okImportFriends, importDeviceContacts, importAllDeviceContacts } from '@/services/social';
 
-type ImportSource = 'vk' | 'ok' | 'contacts';
+type ImportSource = 'vk' | 'ok' | 'contacts' | 'contacts_all';
 type ImportStatus = 'idle' | 'loading' | 'done' | 'error';
 
 interface SourceConfig {
@@ -48,11 +48,19 @@ const SOURCES: SourceConfig[] = [
   },
   {
     id: 'contacts',
-    title: 'Контакты телефона',
-    subtitle: 'Контакты с указанной датой рождения',
-    icon: 'people',
+    title: 'Контакты с ДР',
+    subtitle: 'Только контакты с указанной датой рождения',
+    icon: 'gift',
     color: '#10B981',
     importFn: importDeviceContacts,
+  },
+  {
+    id: 'contacts_all',
+    title: 'Все контакты телефона',
+    subtitle: 'Имя, телефон, фото — дату ДР добавишь потом',
+    icon: 'people',
+    color: '#6366F1',
+    importFn: importAllDeviceContacts,
   },
 ];
 
@@ -65,11 +73,13 @@ export default function ImportScreen() {
     vk: 'idle',
     ok: 'idle',
     contacts: 'idle',
+    contacts_all: 'idle',
   });
   const [results, setResults] = useState<Record<ImportSource, { total: number; added: number }>>({
     vk: { total: 0, added: 0 },
     ok: { total: 0, added: 0 },
     contacts: { total: 0, added: 0 },
+    contacts_all: { total: 0, added: 0 },
   });
 
   /**

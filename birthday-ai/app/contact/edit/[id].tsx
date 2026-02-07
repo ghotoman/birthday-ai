@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet,
   ScrollView,
@@ -6,6 +6,8 @@ import {
   Text,
   TouchableOpacity,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -39,6 +41,7 @@ export default function EditContactScreen() {
   const contact = useContactsStore((s) => s.getContact(id!));
   const updateContact = useContactsStore((s) => s.updateContact);
   const t = useT();
+  const scrollRef = useRef<ScrollView>(null);
 
   const [name, setName] = useState('');
   const [birthdayDate, setBirthdayDate] = useState<Date | null>(null);
@@ -118,7 +121,13 @@ export default function EditContactScreen() {
           headerTitleStyle: { color: colors.text },
         }}
       />
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      >
       <ScrollView
+        ref={scrollRef}
         style={[styles.container, { backgroundColor: colors.background }]}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
@@ -256,6 +265,9 @@ export default function EditContactScreen() {
               containerStyle={{ flex: 1 }}
               onSubmitEditing={addAttr}
               returnKeyType="done"
+              onFocus={() => {
+                setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 300);
+              }}
             />
             <TouchableOpacity
               style={[styles.attrAddBtn, { backgroundColor: colors.secondary }]}
@@ -275,6 +287,7 @@ export default function EditContactScreen() {
           style={{ marginTop: spacing['2xl'] }}
         />
       </ScrollView>
+      </KeyboardAvoidingView>
     </>
   );
 }

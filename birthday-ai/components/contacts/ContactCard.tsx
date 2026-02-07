@@ -12,6 +12,7 @@ import {
   daysUntilBirthday,
   formatBirthday,
   getAge,
+  hasBirthday,
 } from '@/utils/dates';
 
 interface ContactCardProps {
@@ -46,7 +47,9 @@ export function ContactCard({ contact, compact = false }: ContactCardProps) {
           {contact.name}
         </Text>
         <Text style={[styles.date, { color: colors.textSecondary }]}>
-          {formatBirthday(contact.birthday)} · {getAge(contact.birthday)} лет
+          {hasBirthday(contact.birthday)
+            ? `${formatBirthday(contact.birthday)} · ${getAge(contact.birthday)} лет`
+            : contact.phone || 'ДР не указан'}
         </Text>
         {!compact && contact.attributes.length > 0 && (
           <View style={styles.tags}>

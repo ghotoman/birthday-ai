@@ -16,7 +16,8 @@ export interface Contact {
   id: string;
   name: string;
   avatarUrl?: string;
-  birthday: string; // ISO date string YYYY-MM-DD
+  phone?: string;
+  birthday: string; // ISO date string YYYY-MM-DD, пустая строка если неизвестно
   groupType: GroupType;
   notificationLevel: NotificationLevel;
   toneDefault: ToneType;
