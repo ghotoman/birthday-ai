@@ -97,7 +97,7 @@ export async function generateRoutes(app: FastifyInstance) {
           });
         }
 
-        const data = await response.json();
+        const data: any = await response.json();
 
         // Извлекаем base64 картинку из ответа OpenRouter
         const message = data?.choices?.[0]?.message;
