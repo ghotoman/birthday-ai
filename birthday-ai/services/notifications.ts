@@ -5,51 +5,44 @@ import { getNextBirthday, getUpcomingAge } from '@/utils/dates';
 import { subDays } from 'date-fns';
 
 // Конфигурация уведомлений
-try {
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: true,
-      shouldSetBadge: true,
-    }),
-  });
-} catch (err) {
-  console.warn('Failed to set notification handler:', err);
-}
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
 
 /**
  * Запрос разрешений на Push-уведомления
  */
 export async function requestNotificationPermissions(): Promise<boolean> {
-  try {
-    const { status: existing } = await Notifications.getPermissionsAsync();
-    let finalStatus = existing;
+  const { status: existing } = await Notifications.getPermissionsAsync();
+  let finalStatus = existing;
 
-    if (existing !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
+  if (existing !== 'granted') {
+    const { status } = await Notifications.requestPermissionsAsync();
+    finalStatus = status;
+  }
 
-    if (finalStatus !== 'granted') {
-      return false;
-    }
-
-    // Android: создаём канал уведомлений
-    if (Platform.OS === 'android') {
-      await Notifications.setNotificationChannelAsync('birthdays', {
-        name: 'Дни рождения',
-        importance: Notifications.AndroidImportance?.HIGH ?? 4,
-        vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#FF4D6D',
-        sound: 'default',
-      });
-    }
-
-    return true;
-  } catch (err) {
-    console.warn('Failed to request notification permissions:', err);
+  if (finalStatus !== 'granted') {
     return false;
   }
+
+  // Android: создаём канал уведомлений
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync('birthdays', {
+      name: 'Дни рождения',
+      importance: Notifications.AndroidImportance.HIGH,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#FF4D6D',
+      sound: 'default',
+    });
+  }
+
+  return true;
 }
 
 /**
@@ -66,6 +59,7 @@ function getNotificationDays(level: NotificationLevel): number[] {
     case 'same_day':
       return [0]; // в день
     case 'none':
+    default:
       return [];
   }
 }
@@ -111,30 +105,30 @@ function notificationId(contactId: string, daysBefore: number): string {
  * Планировать уведомления для одного контакта
  */
 export async function scheduleContactNotifications(contact: Contact): Promise<void> {
-  const days = getNotificationDays(contact.notificationLevel);
+  try {
+    const days = getNotificationDays(contact.notificationLevel);
 
-  // Удалить старые уведомления для этого контакта
-  await cancelContactNotifications(contact.id);
+    // Удалить старые уведомления для этого контакта
+    await cancelContactNotifications(contact.id);
 
-  if (days.length === 0) return;
+    if (!days || days.length === 0) return;
 
-  const nextBirthday = getNextBirthday(contact.birthday);
-  const now = new Date();
+    const nextBirthday = getNextBirthday(contact.birthday);
+    const now = new Date();
 
-  for (const daysBefore of days) {
-    const notifDate = daysBefore === 0
-      ? new Date(nextBirthday.getFullYear(), nextBirthday.getMonth(), nextBirthday.getDate(), 9, 0, 0)
-      : subDays(nextBirthday, daysBefore);
+    for (const daysBefore of days) {
+      const notifDate = daysBefore === 0
+        ? new Date(nextBirthday.getFullYear(), nextBirthday.getMonth(), nextBirthday.getDate(), 9, 0, 0)
+        : subDays(nextBirthday, daysBefore);
 
-    // Ставим на 9:00
-    notifDate.setHours(9, 0, 0, 0);
+      // Ставим на 9:00
+      notifDate.setHours(9, 0, 0, 0);
 
-    // Не планируем уведомления в прошлом
-    if (notifDate <= now) continue;
+      // Не планируем уведомления в прошлом
+      if (notifDate <= now) continue;
 
-    const { title, body } = getNotificationBody(contact, daysBefore);
+      const { title, body } = getNotificationBody(contact, daysBefore);
 
-    try {
       await Notifications.scheduleNotificationAsync({
         identifier: notificationId(contact.id, daysBefore),
         content: {
@@ -144,13 +138,14 @@ export async function scheduleContactNotifications(contact: Contact): Promise<vo
           sound: 'default',
           ...(Platform.OS === 'android' ? { channelId: 'birthdays' } : {}),
         },
-        trigger: Notifications.SchedulableTriggerInputTypes
-          ? { type: Notifications.SchedulableTriggerInputTypes.DATE, date: notifDate }
-          : { date: notifDate } as any,
+        trigger: {
+          type: 'date' as any,
+          date: notifDate,
+        },
       });
-    } catch (err) {
-      console.warn('Failed to schedule notification for', contact.name, err);
     }
+  } catch (e) {
+    console.warn(`Failed to schedule notifications for ${contact.name}:`, e);
   }
 }
 
@@ -168,16 +163,12 @@ export async function cancelContactNotifications(contactId: string): Promise<voi
  * Переплаировать уведомления для всех контактов
  */
 export async function rescheduleAllNotifications(contacts: Contact[]): Promise<void> {
-  try {
-    // Сначала удаляем все запланированные
-    await Notifications.cancelAllScheduledNotificationsAsync();
+  // Сначала удаляем все запланированные
+  await Notifications.cancelAllScheduledNotificationsAsync();
 
-    // Планируем заново
-    for (const contact of contacts) {
-      await scheduleContactNotifications(contact);
-    }
-  } catch (err) {
-    console.warn('Failed to reschedule notifications:', err);
+  // Планируем заново
+  for (const contact of contacts) {
+    await scheduleContactNotifications(contact);
   }
 }
 

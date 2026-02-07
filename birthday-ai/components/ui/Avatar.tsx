@@ -3,7 +3,7 @@ import { View, Text, Image, StyleSheet, ViewStyle, ImageStyle } from 'react-nati
 import { useColors } from '@/hooks';
 import { palette } from '@/constants/Colors';
 
-type AvatarSize = 'sm' | 'md' | 'lg' | 'xl';
+type AvatarSize = 'sm' | 'md' | 'lg' | 'xl' | number;
 
 interface AvatarProps {
   name: string;
@@ -54,8 +54,8 @@ function getInitials(name: string): string {
 }
 
 export function Avatar({ name, imageUrl, size = 'md', style }: AvatarProps) {
-  const dim = SIZES[size];
-  const fontSize = FONT_SIZES[size];
+  const dim = typeof size === 'number' ? size : SIZES[size];
+  const fontSize = typeof size === 'number' ? size * 0.4 : FONT_SIZES[size];
 
   if (imageUrl) {
     return (

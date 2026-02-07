@@ -49,7 +49,7 @@ export default function RootLayout() {
   const contactsLoaded = useContactsStore((s) => s.loaded);
   const loadContacts = useContactsStore((s) => s.loadContacts);
 
-  // Загрузка истории поздравлений
+  // Загрузка поздравлений
   const loadGreetings = useGreetingsStore((s) => s.loadGreetings);
 
   // Загрузка языка
@@ -67,8 +67,8 @@ export default function RootLayout() {
   // Переплаировать уведомления при изменении контактов
   useEffect(() => {
     if (contactsLoaded && contacts.length > 0) {
-      rescheduleAllNotifications(contacts).catch((err) =>
-        console.warn('Failed to schedule notifications:', err)
+      rescheduleAllNotifications(contacts).catch((e) =>
+        console.warn('Notification scheduling failed:', e)
       );
     }
   }, [contactsLoaded, contacts]);
