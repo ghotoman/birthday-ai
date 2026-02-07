@@ -28,10 +28,14 @@ fi
 # Создать директории для certbot
 mkdir -p nginx/certbot/conf nginx/certbot/www
 
-# Открыть порты
-echo "Открываю порты 80 и 443..."
-sudo ufw allow 80
-sudo ufw allow 443
+# Открыть порты (если ufw установлен)
+if command -v ufw &> /dev/null; then
+    echo "Открываю порты 80 и 443..."
+    sudo ufw allow 80
+    sudo ufw allow 443
+else
+    echo "ufw не найден — порты должны быть уже открыты"
+fi
 
 # ======= Шаг 1: Запуск без SSL (нужен для certbot challenge) =======
 echo ""
