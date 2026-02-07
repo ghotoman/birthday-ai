@@ -53,14 +53,14 @@ export async function generateRoutes(app: FastifyInstance) {
     }
   });
 
-  // POST /api/generate-image — генерация открытки
-  app.post<{ Body: { prompt: string; model?: string; size?: string } }>(
+  // POST /api/generate-image — генерация открытки через chat/completions + modalities
+  app.post<{ Body: { prompt: string; model?: string; aspect_ratio?: string } }>(
     '/api/generate-image',
     async (request, reply) => {
       const {
         prompt,
-        model = 'openai/dall-e-3',
-        size = '1024x1024',
+        model = 'google/gemini-2.0-flash-exp:free',
+        aspect_ratio = '1:1',
       } = request.body;
 
       if (!prompt) {
@@ -68,7 +68,7 @@ export async function generateRoutes(app: FastifyInstance) {
       }
 
       try {
-        const response = await fetch('https://openrouter.ai/api/v1/images/generations', {
+        const response = await fetch(OPENROUTER_URL, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -78,18 +78,19 @@ export async function generateRoutes(app: FastifyInstance) {
           },
           body: JSON.stringify({
             model,
-            prompt,
-            n: 1,
-            size,
+            messages: [
+              { role: 'user', content: prompt },
+            ],
+            modalities: ['image', 'text'],
+            image_config: {
+              aspect_ratio,
+            },
           }),
         });
 
         if (!response.ok) {
           const errorText = await response.text();
           app.log.error(`Image generation error: ${response.status} — ${errorText}`);
-
-          // Fallback: если OpenRouter images endpoint не работает, пробуем через chat с моделью
-          // которая возвращает URL картинки
           return reply.status(response.status).send({
             error: 'Image generation failed',
             details: errorText,
@@ -97,7 +98,35 @@ export async function generateRoutes(app: FastifyInstance) {
         }
 
         const data = await response.json();
-        return reply.send(data);
+
+        // Извлекаем base64 картинку из ответа OpenRouter
+        const message = data?.choices?.[0]?.message;
+        const images = message?.images;
+
+        if (images && images.length > 0) {
+          // Возвращаем в формате совместимом с клиентом
+          return reply.send({
+            data: images.map((img: any) => ({
+              url: img.image_url?.url || img.url || '',
+            })),
+          });
+        }
+
+        // Fallback: если images пустой, проверяем content на base64
+        if (message?.content) {
+          const base64Match = message.content.match(/data:image\/[^;]+;base64,[A-Za-z0-9+/=]+/);
+          if (base64Match) {
+            return reply.send({
+              data: [{ url: base64Match[0] }],
+            });
+          }
+        }
+
+        app.log.error('No images in OpenRouter response');
+        return reply.status(500).send({
+          error: 'No image generated',
+          details: 'AI model did not return an image',
+        });
       } catch (err: any) {
         app.log.error(`Image generation error: ${err.message}`);
         return reply.status(500).send({ error: 'Internal server error' });

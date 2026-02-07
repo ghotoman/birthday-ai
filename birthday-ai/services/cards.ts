@@ -14,17 +14,16 @@ function buildCardPrompt(contact: Contact, answers: QuestionnaireAnswers): strin
   const age = getUpcomingAge(contact.birthday);
   const tone = TONE_LABELS[answers.tone];
 
-  return `Create a beautiful birthday greeting card illustration. 
+  return `Create a beautiful birthday greeting card illustration.
 Style: modern, colorful, festive, warm.
 Mood: ${tone}.
-The card should feature:
-- Birthday celebration theme with balloons, confetti, or cake
-- Beautiful typography area for the text "С Днём Рождения!" (Happy Birthday in Russian)
-- The number "${age}" prominently displayed
-- Warm and inviting color palette
-- No actual text in the image, just decorative elements
+Requirements:
+- Birthday celebration theme with balloons, confetti, cake or gifts
+- The number "${age}" can be artistically incorporated as a decorative element
+- Warm and inviting color palette with gradients
 - Professional quality, suitable for sharing on social media
-Do NOT include any written text or letters in the image.`;
+- Clean, modern design with plenty of visual appeal
+Do NOT include any written text, letters, or words in the image. Only decorative elements and illustrations.`;
 }
 
 export interface CardGenerationResult {
@@ -57,20 +56,26 @@ export async function generateCard(
 
   const data = await response.json();
 
-  if (!data.data || !data.data[0]) {
+  if (!data.data || !data.data[0] || !data.data[0].url) {
     throw new Error('Не удалось получить изображение');
   }
 
-  const imageUrl = data.data[0].url || data.data[0].b64_json;
+  const imageUrl: string = data.data[0].url;
 
   // Скачиваем картинку локально
   const filename = `birthday_card_${contact.id}_${Date.now()}.png`;
   const localUri = `${FileSystem.cacheDirectory}${filename}`;
 
-  if (imageUrl.startsWith('http')) {
+  if (imageUrl.startsWith('data:image/')) {
+    // base64 data URL — извлекаем чистый base64
+    const base64Data = imageUrl.replace(/^data:image\/\w+;base64,/, '');
+    await FileSystem.writeAsStringAsync(localUri, base64Data, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+  } else if (imageUrl.startsWith('http')) {
     await FileSystem.downloadAsync(imageUrl, localUri);
   } else {
-    // base64
+    // Чистый base64 без префикса
     await FileSystem.writeAsStringAsync(localUri, imageUrl, {
       encoding: FileSystem.EncodingType.Base64,
     });
