@@ -201,18 +201,48 @@ birthday-ai/
 
 ---
 
+## Исправленные баги и уроки
+
+### BUG-001: Crash "undefined is not a function" при открытии контакта (2026-02-07)
+
+**Симптом:** При тапе на контакт появлялся экран "Something went wrong — undefined is not a function".
+
+**Корневая причина — цепочка из 3 багов:**
+
+1. **`expo-notifications` отсутствовал в `plugins` в `app.json`** — нативный модуль не был инициализирован в production-билде. Любой вызов `Notifications.*` API мог падать.
+2. **`Notifications.SchedulableTriggerInputTypes.DATE` = `undefined` при star-import** — `import * as Notifications` не подхватывает TypeScript enum как runtime-значение. `undefined.DATE` → `TypeError`.
+3. **Нет `.catch()` на async-вызовах уведомлений в `_layout.tsx`** — `rescheduleAllNotifications(contacts)` вызывался в `useEffect` без обработки ошибок. Unhandled Promise rejection → React ErrorBoundary.
+
+**Цепочка:** app start → contacts load → `rescheduleAllNotifications()` → native module not configured + enum undefined → Promise rejected → no catch → ErrorBoundary → "something went wrong". Тайминг совпадал с навигацией, создавая иллюзию что крашит переход на экран контакта.
+
+**Дополнительные фиксы (превентивные):**
+- `getNotificationDays()` — добавлен `default: return []` (раньше возвращал `undefined` при неизвестном `notificationLevel`)
+- `Avatar` — поддержка числового `size` (в BirthdayCalendar передавались числа `44`/`40` вместо строковых `'sm'`/`'md'`)
+- `greetingsStore` — загрузка при старте в `_layout.tsx` (раньше не вызывался `loadGreetings()`)
+- Contact detail — заменён вызов `s.getForContact(id!)` внутри Zustand-selector на прямую фильтрацию `s.greetings.filter()`
+
+**Уроки на будущее:**
+| # | Правило | Почему |
+|---|---------|--------|
+| 1 | **Всегда добавлять нативные модули в `plugins` в `app.json`** | Без plugin нативный код не конфигурируется в production build |
+| 2 | **Не использовать TS enums через star-import (`import * as X`)** | Enums могут быть `undefined` в runtime при ESM/CJS interop. Использовать строковые литералы или прямой именованный import |
+| 3 | **Всегда `.catch()` на async-вызовах в useEffect** | Unhandled rejection пробрасывается в ErrorBoundary и крашит UI |
+| 4 | **Switch без default = потенциальный undefined** | Всегда ставить `default` case, даже если TypeScript "гарантирует" exhaustiveness |
+| 5 | **Все Zustand-сторы загружать при старте приложения** | Selector на незагруженном сторе может дать неожиданный результат |
+| 6 | **Не вызывать функции внутри Zustand-selector** | `(s) => s.method(arg)` — хрупко. Лучше `(s) => s.data` + фильтрация снаружи |
+
+---
+
 ## Последнее обновление
 
-**Дата:** 2026-02-06
-**Что сделано:** i18n (русский/английский):
-- Экран выбора языка при первом входе
-- Переключение языка в настройках (одним нажатием)
-- Все экраны переведены через i18n ключи
-- Zustand стор для языка с персистенцией в AsyncStorage
-- Предыдущее: Фаза 2 полностью завершена:
-- Нативный date picker (iOS/Android) вместо текстового ввода даты
-- Редактирование контактов (экран edit/[id] + кнопка на странице контакта)
-- Push-уведомления: автоматическое планирование по NotificationLevel, Android-канал, навигация по нажатию
-- Генерация AI-открыток (DALL-E через бэкенд), сохранение в галерею, шаринг
-- Календарь-таб с сеткой по месяцам
-- Бэкенд работает по IP без домена
+**Дата:** 2026-02-07
+**Что сделано:** Критический багфикс — crash при тапе на контакт:
+- Добавлен expo-notifications plugin в app.json
+- Обёрнуты notification-вызовы в try/catch
+- Исправлен trigger type для уведомлений (enum → строковый литерал)
+- Avatar поддерживает числовой size
+- greetingsStore загружается при старте
+- Защитные проверки в contact detail screen
+- Подробный разбор бага в секции «Исправленные баги и уроки»
+
+**Предыдущее (2026-02-06):** i18n (русский/английский), Фаза 2 полностью завершена, бэкенд работает по IP без домена
